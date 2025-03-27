@@ -48,6 +48,15 @@ function refresh() {
     }
 }
 
+function escapeHtml(unsafe) {
+    return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
 function ansiformat(data) {
     var ansiTextArray = ansiparse(data);
     var text = "";
@@ -55,9 +64,9 @@ function ansiformat(data) {
     for (i = 0; i < ansiTextArray.length; i++) {
         var data = ansiTextArray[i];
         if ('foreground' in data) {
-            text += '<span style="color: ' + data.foreground + '">' + data.text + '</span>';
+            text += '<span style="color: ' + escapeHtml(data.foreground) + '">' + escapeHtml(data.text) + '</span>';
         } else {
-            text += data.text;
+            text += escapeHtml(data.text);
         }
     }
 
@@ -76,7 +85,10 @@ $(document).ready(function () {
 	var socket = new WebSocket(protocol + "://" + document.domain + ":" + window.location.port + "/socket");
 
 	socket.onmessage = function (event) {
-		if (event.data.contains("SCROLLBACK")) {
+		if (typeof event.data !== 'string') {
+                	return;
+        	}
+		if (event.data.includes("SCROLLBACK")) {
 			dataArray = event.data.split(" ");
 			scrollback = dataArray[1];
 		}
@@ -94,13 +106,13 @@ $(document).ready(function () {
 			fragment.appendChild(newLine);
 			term.append(fragment);
 			scrollback--;
-            termScroll.scrollTop(termScroll.prop("scrollHeight"));
+            		termScroll.scrollTop(termScroll.prop("scrollHeight"));
 		} else {
 			var newLine = document.createElement('p');
 			newLine.className = "term_line";
 			newLine.innerHTML = ansiformat(event.data);
 			term.append(newLine);
-            termScroll.scrollTop(termScroll.prop("scrollHeight"));
+            		termScroll.scrollTop(termScroll.prop("scrollHeight"));
 		}
 	}
 
@@ -321,7 +333,3 @@ ansiparse.styles = {
     '3': 'italic',
     '4': 'underline'
 };
-
-// yolo
-
-String.prototype.contains = function(it) { return this.indexOf(it) != -1; };
